@@ -1,0 +1,11 @@
+# Ignore all video and webp files
+*.mp4
+*.mov
+*.webm
+*.webp
+
+# Also ignore in subfolders:
+**/*.mp4
+**/*.mov
+**/*.webm
+**/*.webp

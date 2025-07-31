@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Scrollbar CSS ===== */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c9c9c9 transparent;
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent; /*f1f1f1;*/
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #c9c9c9;
+  border-radius: 12px;
+  border: 0px solid #ffffff;
+}
+
+html,
+body {
+  @apply min-h-screen w-full;
+  height: 100svh;
+  /* Remove overflow-hidden! */
+  /* Remove select-none if you want text selection on forms! */
+}
+
+#app {
+  @apply w-full min-h-screen flex flex-col;
+  /* Remove overflow-hidden! */
+}
+
+button,
+a[button] {
+  @apply relative box-border h-fit min-h-10 w-full flex justify-center py-2 px-4 text-sm font-medium rounded-md focus:outline-none focus:ring-0;
+}
+
+button[primary]:not([primary="false"]),
+a[button][primary]:not([primary="false"]) {
+  @apply border border-transparent text-white bg-[#2196F3] hover:bg-[#54B3FE];
+}
+
+button[secondary]:not([secondary="false"]),
+a[button][secondary]:not([secondary="false"]) {
+  @apply border border-transparent text-white bg-red-500 hover:bg-red-400;
+}
+
+button[tertiary]:not([tertiary="false"]),
+a[button][tertiary]:not([tertiary="false"]) {
+  @apply border border-transparent text-white bg-gray-500 hover:bg-gray-400;
+}
+
+button[tertiary-outline]:not([tertiary-outline="false"]),
+a[button][tertiary-outline]:not([tertiary-outline="false"]) {
+  @apply border-2 border-gray-500 text-gray-500 hover:bg-gray-100;
+}
+
+input:not([type="checkbox"]),
+select,
+textarea {
+  @apply rounded-md shadow-sm relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-0 focus:z-10 sm:text-sm resize-none;
+}
