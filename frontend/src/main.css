@@ -27,15 +27,12 @@
 
 html,
 body {
-  @apply min-h-screen w-full;
+  @apply h-full w-screen overflow-hidden select-none;
   height: 100svh;
-  /* Remove overflow-hidden! */
-  /* Remove select-none if you want text selection on forms! */
 }
 
 #app {
-  @apply w-full min-h-screen flex flex-col;
-  /* Remove overflow-hidden! */
+  @apply w-full h-full  overflow-hidden flex flex-col;
 }
 
 button,
@@ -45,7 +42,7 @@ a[button] {
 
 button[primary]:not([primary="false"]),
 a[button][primary]:not([primary="false"]) {
-  @apply border border-transparent text-white bg-[#2196F3] hover:bg-[#54B3FE];
+  @apply border border-transparent text-white bg-[#5e95eb] hover:bg-[#6b9ceb];
 }
 
 button[secondary]:not([secondary="false"]),
