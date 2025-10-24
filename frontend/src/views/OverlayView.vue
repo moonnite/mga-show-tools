@@ -78,56 +78,54 @@
 
   <!-- DICE OVERLAY: PLAYER 1 (left bottom) -->
   <Transition name="fade" mode="out-in">
-    <div
-      v-show="showDiceP1"
-      class="absolute left-10 bottom-10 flex flex-col items-start gap-3 px-8 py-6 bg-[#F63330] text-white rounded-2xl z-30"
-    >
-      <!-- NAME -->
-      <div class="text-4xl font-black uppercase tracking-wide">{{ dicePlayers.player1 }}</div>
-      <!-- VALUES -->
-      <div class="text-2xl font-extrabold">
-        Gesichert: <span class="font-black">{{ diceP1Saved }}</span>
-      </div>
-      <div class="text-2xl font-extrabold">
-        Aktuell: <span class="font-black">{{ diceP1Unsaved }}</span>
-      </div>
-      <!-- STACK -->
-      <div class="flex flex-wrap gap-3 mt-1">
+    <div v-show="showDiceP1" class="absolute left-10 bottom-10 flex flex-col items-start gap-2 z-30">
+      <!-- Stack ABOVE the fixed card -->
+      <div class="flex flex-wrap gap-3 pl-2 justify-start">
         <span
           v-for="(v, i) in diceP1Stack"
           :key="'p1' + i"
-          class="px-4 py-2 bg-white text-[#F63330] rounded-xl font-black text-xl"
+          class="px-4 py-2 bg-white text-[#F63330] font-black text-xl shadow"
           >{{ v }}</span
         >
         <span v-if="diceP1Stack.length === 0" class="opacity-70 text-xl">—</span>
+      </div>
+
+      <!-- Fixed-size info card (name + points) -->
+      <div class="px-8 py-6 bg-[#F63330] text-white shadow-xl w-[22rem]">
+        <div class="text-4xl font-black uppercase tracking-wide">{{ dicePlayers.player1 }}</div>
+        <div class="text-2xl font-extrabold mt-1">
+          Gesichert: <span class="font-black">{{ diceP1Saved }}</span>
+        </div>
+        <div class="text-2xl font-extrabold">
+          Aktuell: <span class="font-black">{{ diceP1Unsaved }}</span>
+        </div>
       </div>
     </div>
   </Transition>
 
   <!-- DICE OVERLAY: PLAYER 2 (right bottom) -->
   <Transition name="fade" mode="out-in">
-    <div
-      v-show="showDiceP2"
-      class="absolute right-10 bottom-10 flex flex-col items-end gap-3 px-8 py-6 bg-[#1ED8E6] text-white rounded-2xl z-30"
-    >
-      <!-- NAME -->
-      <div class="text-4xl font-black uppercase tracking-wide">{{ dicePlayers.player2 }}</div>
-      <!-- VALUES -->
-      <div class="text-2xl font-extrabold">
-        Gesichert: <span class="font-black">{{ diceP2Saved }}</span>
-      </div>
-      <div class="text-2xl font-extrabold">
-        Aktuell: <span class="font-black">{{ diceP2Unsaved }}</span>
-      </div>
-      <!-- STACK -->
-      <div class="flex flex-wrap gap-3 mt-1 justify-end">
+    <div v-show="showDiceP2" class="absolute right-10 bottom-10 flex flex-col items-end gap-2 z-30">
+      <!-- Stack ABOVE the fixed card -->
+      <div class="flex flex-wrap gap-3 pr-2 justify-end">
         <span
           v-for="(v, i) in diceP2Stack"
           :key="'p2' + i"
-          class="px-4 py-2 bg-white text-[#1ED8E6] rounded-xl font-black text-xl"
+          class="px-4 py-2 bg-white text-[#1ED8E6] font-black text-xl shadow"
           >{{ v }}</span
         >
         <span v-if="diceP2Stack.length === 0" class="opacity-70 text-xl">—</span>
+      </div>
+
+      <!-- Fixed-size info card (name + points) -->
+      <div class="px-8 py-6 bg-[#1ED8E6] text-white shadow-xl w-[22rem]">
+        <div class="text-4xl font-black uppercase tracking-wide">{{ dicePlayers.player2 }}</div>
+        <div class="text-2xl font-extrabold mt-1">
+          Gesichert: <span class="font-black">{{ diceP2Saved }}</span>
+        </div>
+        <div class="text-2xl font-extrabold">
+          Aktuell: <span class="font-black">{{ diceP2Unsaved }}</span>
+        </div>
       </div>
     </div>
   </Transition>
@@ -136,16 +134,14 @@
   <Transition name="fade" mode="out-in">
     <div
       v-show="showDiceTotals"
-      class="absolute left-1/2 -translate-x-1/2 bottom-16 flex flex-col gap-4 py-6 px-14 bg-[#F63330] text-white whitespace-pre-wrap overflow-hidden z-30 rounded-2xl"
+      class="absolute left-1/2 -translate-x-1/2 bottom-16 flex flex-col gap-4 py-6 px-14 bg-[#F63330] text-white whitespace-pre-wrap overflow-hidden z-30"
     >
       <div class="grid grid-cols-2 gap-8 min-w-[44rem]">
-        <!-- Player 1 card: beige + black text + NAME -->
-        <div class="flex items-center justify-between bg-[#FDF8E5] text-black px-6 py-4 rounded-xl">
+        <div class="flex items-center justify-between bg-[#FDF8E5] text-black px-6 py-4">
           <span class="text-3xl font-black uppercase tracking-wide">{{ dicePlayers.player1 }}</span>
           <span class="text-4xl font-black">{{ diceP1Saved }}</span>
         </div>
-        <!-- Player 2 card: beige + black text + NAME -->
-        <div class="flex items-center justify-between bg-[#FDF8E5] text-black px-6 py-4 rounded-xl">
+        <div class="flex items-center justify-between bg-[#FDF8E5] text-black px-6 py-4">
           <span class="text-3xl font-black uppercase tracking-wide">{{ dicePlayers.player2 }}</span>
           <span class="text-4xl font-black">{{ diceP2Saved }}</span>
         </div>
@@ -388,7 +384,6 @@ export default defineComponent({
       if (result.type == "dice") {
         const d = result.data?.dice ?? {};
         const players = result.data?.players ?? {};
-        // Always set names when any dice overlay is cued
         this.dicePlayers = { player1: players.player1 || "", player2: players.player2 || "" };
 
         if (result.player === "2") {
@@ -407,7 +402,6 @@ export default defineComponent({
       if (result.type == "dice_totals") {
         const d = result.data?.dice ?? {};
         const players = result.data?.players ?? {};
-        // Names for the center totals
         this.dicePlayers = { player1: players.player1 || "", player2: players.player2 || "" };
         const p1 = d.p1 || { saved: 0 };
         const p2 = d.p2 || { saved: 0 };

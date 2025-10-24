@@ -81,11 +81,11 @@
     "video": "/Spiel_5_Stinger_MGA_2024-vp9-chrome.webm",
     "dice": {
       "p1": {
-        "saved": 0,
+        "saved": 60,
         "stack": []
       },
       "p2": {
-        "saved": 0,
+        "saved": 33,
         "stack": []
       }
     }
