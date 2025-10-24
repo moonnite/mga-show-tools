@@ -32,7 +32,7 @@ function set_data(data: any): Promise<void> {
   });
 }
 
-type CutType = "all" | "name" | "score" | "info" | "total" | "transition" | "game" | "timer" | "livetimer";
+type CutType = "all" | "name" | "score" | "info" | "total" | "transition" | "game" | "timer" | "livetimer" | "question";
 
 const app = express();
 const server = http.createServer(app);
@@ -50,19 +50,35 @@ io.on("connection", (socket) => {
     let save = await get_data();
     socket.emit("state", save);
   });
+
   socket.on("updateState", async (data: any) => {
     await set_data(data);
   });
+
   socket.on("clear", async (data: { type: CutType; scene: string }) => {
     console.log("CLEAR EVENT!", data);
     socket.broadcast.emit("clear", data);
   });
-  socket.on("cut", async (data: { type: CutType; scene: string }) => {
+
+  socket.on("cut", async (data: { type: CutType; scene: string; [key: string]: any }) => {
     console.log("CUT EVENT!", data);
-    let save = await get_data();
+    const save = await get_data();
+
+    // keep original total players behavior
     save.total["players"] = save.players;
-    socket.broadcast.emit("cut", { data: save[data.scene], type: data.type });
+
+    const payload: any = save[data.scene];
+
+    // For question overlays we also need the player names on the payload.
+    if (data.type === "question" && payload) {
+      payload.players = save.players;
+    }
+
+    // Broadcast with any extra fields (e.g., index, showResults)
+    const { type, scene, ...extra } = data;
+    socket.broadcast.emit("cut", { data: payload, type, ...extra });
   });
+
   socket.on("timer", (data: any) => {
     io.emit("timer", data);
   });

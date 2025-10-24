@@ -43,6 +43,28 @@
     </div>
   </Transition>
 
+  <!-- Question (with optional results) -->
+  <Transition name="fade" mode="out-in">
+    <div
+      v-if="showQuestion"
+      class="absolute left-1/2 -translate-x-1/2 bottom-16 flex flex-col gap-3 py-5 px-12 bg-[#F63330] max-w-[70%] min-w-[48rem] whitespace-pre-wrap overflow-hidden z-30"
+    >
+      <p class="text-white text-center font-black text-5xl leading-tight">
+        {{ questionText }}
+      </p>
+      <div v-if="showQuestionResults" class="grid grid-cols-2 gap-4">
+        <div class="flex items-center justify-between bg-[#1ED8E6] px-5 py-3">
+          <span class="text-[#0E2232] text-2xl font-black uppercase tracking-wide">{{ qLabel1 }}</span>
+          <span class="text-[#0E2232] text-3xl font-black">{{ qP1 }}%</span>
+        </div>
+        <div class="flex items-center justify-between bg-[#FDF8E5] px-5 py-3">
+          <span class="text-[#0E2232] text-2xl font-black uppercase tracking-wide">{{ qLabel2 }}</span>
+          <span class="text-[#0E2232] text-3xl font-black">{{ qP2 }}%</span>
+        </div>
+      </div>
+    </div>
+  </Transition>
+
   <Transition name="fade" mode="out-in">
     <div
       v-show="showTimer"
@@ -111,6 +133,15 @@ export default defineComponent({
       timerCurrent: 60,
       timerInterval: undefined as number | undefined,
       showTimer: false,
+
+      // question overlay state
+      showQuestion: false,
+      showQuestionResults: false,
+      questionText: "",
+      qP1: 50,
+      qP2: 50,
+      qLabel1: "",
+      qLabel2: "",
     };
   },
   mounted() {
@@ -127,7 +158,12 @@ export default defineComponent({
     ...mapActions(useConnectionStore, ["connectClient"]),
     ...mapActions(useOverlayStore, ["init"]),
     clearTrigger(result: any) {
-      console.log("CLEAR TRIGGER");
+      // Make question hide atomically to avoid "flash"
+      if (result.type === "question") {
+        this.showQuestion = false;
+        return;
+      }
+
       if (result.type == "name") {
         this.showInfo = false;
       } else if (result.type == "score") {
@@ -154,13 +190,11 @@ export default defineComponent({
         this.showScore = false;
         this.showInfo = false;
       } else if (result.type == "livetimer") {
-        console.log("CLEAR TRIGGER im OverlayView angekommen!");
         this.showTimer = false;
       }
     },
     fadeTrigger(result: any) {},
     cutTrigger(result: any) {
-      console.log("CUT TRIGGER");
       if (result.type == "score") {
         this.player1 = parseInt(result.data.player1);
         this.player2 = parseInt(result.data.player2);
@@ -186,8 +220,34 @@ export default defineComponent({
         this.showScore = false;
         this.showInfo = false;
       } else if (result.type == "livetimer") {
-        console.log("CUT TRIGGER im OverlayView angekommen!");
         this.showTimer = true;
+      } else if (result.type == "question") {
+        const idx = Number(result.index ?? 0);
+        const q = result.data?.questions?.[idx];
+        if (!q) return;
+
+        // text
+        this.questionText = q.text || "";
+
+        // percentages (validate)
+        const p1 = typeof q.p1 === "number" ? q.p1 : Number(q.p1 ?? 0);
+        const p2 = typeof q.p2 === "number" ? q.p2 : Number(q.p2 ?? 0);
+        if (isFinite(p1) && isFinite(p2) && p1 + p2 === 100) {
+          this.qP1 = p1;
+          this.qP2 = p2;
+        } else {
+          this.qP1 = isFinite(p1) ? p1 : 0;
+          this.qP2 = 100 - this.qP1;
+        }
+
+        // labels with fallback to players
+        const players = result.data?.players ?? {};
+        this.qLabel1 = q.label1 && q.label1.trim() ? q.label1 : players.player1 || "";
+        this.qLabel2 = q.label2 && q.label2.trim() ? q.label2 : players.player2 || "";
+
+        // visibility
+        this.showQuestionResults = !!result.showResults;
+        this.showQuestion = true;
       }
     },
     initVideoOverlay() {
@@ -200,13 +260,10 @@ export default defineComponent({
       }, 5400);
     },
     timerTrigger(data: any) {
-      // 1) Sofort Richtung umstellen, ohne das Intervall zu unterbrechen
       if (data.command === "setDirection") {
         this.timerUp = !!data.up;
         return;
       }
-
-      // 2) Start-Logik
       if (data.command === "start") {
         this.timerUp = !!data.up;
         this.timerInitial = (data.min || 0) * 60 + (data.sec || 0);
@@ -219,8 +276,6 @@ export default defineComponent({
         }
         this.timerInterval = window.setInterval(this.updateTimer, 1000);
       }
-
-      // 3) Pause-Logik
       if (data.command === "pause") {
         this.timerPaused = true;
         this.timerRunning = false;
@@ -229,8 +284,6 @@ export default defineComponent({
           this.timerInterval = undefined;
         }
       }
-
-      // 4) Resume-Logik
       if (data.command === "resume") {
         if (!this.timerRunning && this.timerPaused) {
           this.timerPaused = false;
@@ -242,8 +295,6 @@ export default defineComponent({
           this.timerInterval = window.setInterval(this.updateTimer, 1000);
         }
       }
-
-      // 5) Stop-Logik
       if (data.command === "stop") {
         this.timerPaused = false;
         this.timerRunning = false;

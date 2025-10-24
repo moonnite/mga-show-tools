@@ -31,9 +31,12 @@
       <button secondary @click="sendMsg('cut', 'transition', 'winner_tony')">▶️ Tony gewinnt</button>
       <button secondary @click="sendMsg('cut', 'transition', 'winner_sarah')">▶️ Sarah gewinnt</button>
       <br />
-      <button secondary @click="sendMsg('clear', 'total', 'winner_sarah')">CLEAR ALL</button>
+      <!-- UPDATED: Clear all now clears total, questions, and live timer -->
+      <button secondary @click="clearAll()">CLEAR ALL</button>
     </div>
+
     <div class="flex flex-col md:flex-row divide-y md:divide-x divide-gray-400 h-full grow overflow-y-auto">
+      <!-- Aktuelles Spiel -->
       <div class="flex flex-col gap-4 w-full h-full p-2">
         <p class="text-xl w-full text-center font-bold">Aktuelles Spiel</p>
         <div>
@@ -53,9 +56,7 @@
             :value="gamedata?.player1"
             @change="($event) => sendData(activeGame, $event, 'score', '1')"
           >
-            <option v-for="i in (gamedata?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">
-              {{ i - 1 }}
-            </option>
+            <option v-for="i in (gamedata?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">{{ i - 1 }}</option>
           </select>
         </div>
         <div class="flex flex-row items-center justify-between gap-2">
@@ -66,9 +67,7 @@
             :value="gamedata?.player2"
             @change="($event) => sendData(activeGame, $event, 'score', '2')"
           >
-            <option v-for="i in (gamedata?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">
-              {{ i - 1 }}
-            </option>
+            <option v-for="i in (gamedata?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">{{ i - 1 }}</option>
           </select>
         </div>
         <div class="flex flex-col gap-2">
@@ -85,8 +84,72 @@
             <button secondary @click="sendMsg('clear', 'score', activeGame)">🛑 Clear score</button>
           </div>
           <button primary @click="sendMsg('cut', 'transition', activeGame)">▶️ Trigger Game Intro</button>
+
+          <!-- Game 2 Questions Editor -->
+          <div v-if="activeGame === 'game2'" class="mt-6 border-t pt-4">
+            <p class="text-xl w-full text-center font-bold">Spiel 2 – Fragen</p>
+
+            <div
+              v-for="(q, idx) in questions"
+              :key="idx"
+              class="mt-3 p-3 rounded-lg border bg-white/70 flex flex-col gap-2"
+            >
+              <div class="text-sm font-semibold text-gray-600">Frage {{ idx + 1 }}</div>
+
+              <!-- Question text -->
+              <input
+                type="text"
+                placeholder="Fragentext…"
+                :value="q.text"
+                @change="(e:any) => updateQuestionText(idx, e.target.value)"
+              />
+
+              <!-- Editable labels + percentages -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Player 1 -->
+                <div class="flex items-center gap-2">
+                  <input
+                    type="text"
+                    class="w-40"
+                    :placeholder="data?.players?.player1"
+                    :value="q.label1 ?? ''"
+                    @change="(e:any) => updateQuestionLabel(idx, 'label1', e.target.value)"
+                  />
+                  <span>%</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    :value="q.p1"
+                    class="w-20"
+                    @change="(e:any) => updateQuestionPercent(idx, Number(e.target.value))"
+                  />
+                </div>
+
+                <!-- Player 2 (auto % preview) -->
+                <div class="flex items-center gap-2">
+                  <input
+                    type="text"
+                    class="w-40"
+                    :placeholder="data?.players?.player2"
+                    :value="q.label2 ?? ''"
+                    @change="(e:any) => updateQuestionLabel(idx, 'label2', e.target.value)"
+                  />
+                  <span class="text-xs text-gray-500 ml-2"> {{ 100 - (q.p1 ?? 0) }} % </span>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <button primary @click="playQuestion(idx, false)">▶️ Play Frage</button>
+                <button primary @click="playQuestion(idx, true)">▶️ Play Ergebnis</button>
+                <button secondary @click="clearQuestion()">🛑 Clear Frage</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- Gesamtpunktzahl -->
       <div class="flex flex-col gap-4 w-full h-full p-2">
         <p class="text-xl w-full text-center font-bold">Gesamtpunktzahl</p>
         <div>
@@ -115,9 +178,7 @@
             :value="data?.total?.player1"
             @change="($event) => sendData('total', $event, 'score', '1')"
           >
-            <option v-for="i in (data?.total?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">
-              {{ i - 1 }}
-            </option>
+            <option v-for="i in (data?.total?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">{{ i - 1 }}</option>
           </select>
         </div>
         <div class="flex flex-row items-center justify-between gap-2">
@@ -128,9 +189,7 @@
             :value="data?.total?.player2"
             @change="($event) => sendData('total', $event, 'score', '2')"
           >
-            <option v-for="i in (data?.total?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">
-              {{ i - 1 }}
-            </option>
+            <option v-for="i in (data?.total?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">{{ i - 1 }}</option>
           </select>
         </div>
         <div class="flex flex-col gap-2">
@@ -138,6 +197,8 @@
           <button secondary @click="sendMsg('clear', 'total', 'total')">🛑 Clear Punktzahl</button>
         </div>
       </div>
+
+      <!-- Bauchbinden / Info + Timer -->
       <div class="flex flex-col gap-4 w-full h-full p-2">
         <p class="text-xl w-full text-center font-bold">Bauchbinden</p>
         <div>
@@ -148,6 +209,7 @@
           <button primary @click="sendMsg('cut', 'info', 'info')">▶️ Play Info</button>
           <button secondary @click="sendMsg('clear', 'info', 'info')">🛑 Clear Info</button>
         </div>
+
         <!-- TIMER CONTROL START -->
         <div class="mt-6 flex flex-col gap-2 border-t pt-4">
           <p class="text-xl w-full text-center font-bold">Live-Timer</p>
@@ -162,13 +224,13 @@
             <button secondary @click="resumeTimer">Resume</button>
             <button secondary @click="stopTimer">Stop</button>
           </div>
-          <!-- Timer ein-/ausblenden -->
           <div class="flex flex-row gap-2 mt-2">
             <button primary @click="sendMsg('cut', 'livetimer', 'livetimer')">▶️ Play Timer</button>
             <button secondary @click="sendMsg('clear', 'livetimer', 'livetimer')">🛑 Clear Timer</button>
           </div>
         </div>
         <!-- TIMER CONTROL END -->
+
         <!-- Timer Preview Anzeige -->
         <div class="flex flex-col items-center mt-4">
           <label class="text-xs text-gray-600">Timer-Preview</label>
@@ -199,14 +261,14 @@ import { useManagerStore } from "../stores/manager";
 export default defineComponent({
   data() {
     return {
-      activeGame: "game1",
+      activeGame: "game2",
 
       // === Timer-Settings ===
       timerUp: false,
       timerMin: 1,
       timerSec: 0,
 
-      // === Preview‑Timer‑State ===
+      // === Preview-Timer-State ===
       timerInitial: 0,
       timerCurrent: 0,
       timerRunning: false,
@@ -219,6 +281,10 @@ export default defineComponent({
     ...mapState(useManagerStore, ["data"]),
     gamedata() {
       return this.data?.[this.activeGame] ?? {};
+    },
+    questions() {
+      const q = this.data?.game2?.questions ?? [];
+      return Array.from({ length: 7 }, (_, i) => q[i] ?? { text: "", p1: 50, p2: 50, label1: "", label2: "" });
     },
   },
 
@@ -245,27 +311,79 @@ export default defineComponent({
     ...mapActions(useConnectionStore, ["connectClient"]),
     ...mapActions(useManagerStore, ["init", "sendAction", "updateData"]),
 
+    // NEW: clear all helper
+    clearAll() {
+      // clear big overlay elements
+      this.sendMsg("clear", "total", "total");
+      // clear question overlay
+      this.sendMsg("clear", "question", "game2");
+      // clear live timer
+      this.sendMsg("clear", "livetimer", "livetimer");
+    },
+
+    // === Questions helpers ===
+    ensureQuestionsArray() {
+      if (!this.data || !this.data.game2) return;
+      if (!Array.isArray(this.data.game2.questions)) {
+        this.data.game2.questions = [];
+      }
+      while (this.data.game2.questions.length < 7) {
+        this.data.game2.questions.push({
+          text: "",
+          p1: 50,
+          p2: 50,
+          label1: this.data?.players?.player1 ?? "",
+          label2: this.data?.players?.player2 ?? "",
+        });
+      }
+      if (this.data.game2.questions.length > 7) {
+        this.data.game2.questions.splice(7);
+      }
+    },
+    updateQuestionText(idx: number, text: string) {
+      this.ensureQuestionsArray();
+      this.data.game2.questions[idx].text = text;
+      this.updateData("game2", this.data.game2);
+    },
+    updateQuestionPercent(idx: number, p1: number) {
+      this.ensureQuestionsArray();
+      const val = Math.max(0, Math.min(100, Math.round(Number(p1) || 0)));
+      this.data.game2.questions[idx].p1 = val;
+      this.data.game2.questions[idx].p2 = 100 - val;
+      this.updateData("game2", this.data.game2);
+    },
+    updateQuestionLabel(idx: number, key: "label1" | "label2", value: string) {
+      this.ensureQuestionsArray();
+      this.data.game2.questions[idx][key] = value;
+      this.updateData("game2", this.data.game2);
+    },
+    playQuestion(idx: number, withResults: boolean) {
+      this.sendMsg("cut", "question", "game2", { index: idx, showResults: withResults });
+    },
+    clearQuestion() {
+      this.sendMsg("clear", "question", "game2");
+    },
+
     // Backend-Interaktionen
     sendData(scene: string, data: any, type?: "score" | "title", player?: "1" | "2") {
-      this.updateData(scene, data.target.value, type, player);
+      this.updateData(scene, data.target ? data.target.value : data, type, player);
     },
     sendMsg(
       action: "clear" | "cut",
-      type: "all" | "name" | "score" | "info" | "total" | "transition" | "game" | "timer" | "livetimer",
-      scene: string
+      type: "all" | "name" | "score" | "info" | "total" | "transition" | "game" | "timer" | "livetimer" | "question",
+      scene: string,
+      extra: Record<string, any> = {}
     ) {
-      this.sendAction(action, { type, scene });
+      this.sendAction(action, { type, scene, ...extra });
     },
 
-    // Richtung umschalten
+    // === Timer existing methods ===
     onToggleDirection() {
       this.sendAction("timer", {
         command: "setDirection",
         up: this.timerUp,
       });
     },
-
-    // Timer‑Buttons (Server‑Steuerung)
     startTimer() {
       this.sendAction("timer", {
         command: "start",
@@ -284,15 +402,12 @@ export default defineComponent({
       this.sendAction("timer", { command: "stop" });
     },
 
-    // === Preview‑Timer‑Logik ===
+    // === Preview-Timer-Logik ===
     timerTrigger(data: any) {
-      // 1) setDirection
       if (data.command === "setDirection") {
         this.timerUp = !!data.up;
         return;
       }
-
-      // 2) Start
       if (data.command === "start") {
         this.timerUp = !!data.up;
         this.timerInitial = (data.min || 0) * 60 + (data.sec || 0);
@@ -300,27 +415,19 @@ export default defineComponent({
         this.timerRunning = true;
         this.timerPaused = false;
       }
-
-      // 3) Pause
       if (data.command === "pause") {
         this.timerPaused = true;
         this.timerRunning = false;
       }
-
-      // 4) Resume
       if (data.command === "resume") {
         this.timerPaused = false;
         this.timerRunning = true;
       }
-
-      // 5) Stop
       if (data.command === "stop") {
         this.timerPaused = false;
         this.timerRunning = false;
         this.timerCurrent = this.timerUp ? 0 : this.timerInitial;
       }
-
-      // 6) Intervall verwalten
       if (this.timerInterval !== undefined) {
         clearInterval(this.timerInterval);
         this.timerInterval = undefined;
@@ -329,14 +436,11 @@ export default defineComponent({
         this.timerInterval = window.setInterval(this.updateTimerPreview, 1000);
       }
     },
-
     updateTimerPreview() {
       if (!this.timerRunning || this.timerPaused) return;
-
       if (this.timerUp) {
         this.timerCurrent++;
         if (this.timerCurrent >= this.timerInitial) {
-          // Ende erreicht
           this.timerRunning = false;
           if (this.timerInterval !== undefined) {
             clearInterval(this.timerInterval);
@@ -347,7 +451,6 @@ export default defineComponent({
         if (this.timerCurrent > 0) {
           this.timerCurrent--;
           if (this.timerCurrent === 0) {
-            // Ende erreicht
             this.timerRunning = false;
             if (this.timerInterval !== undefined) {
               clearInterval(this.timerInterval);
