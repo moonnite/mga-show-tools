@@ -6,7 +6,7 @@
     <div class="flex flex-col gap-4 h-full w-32 md:w-64 p-2">
       <button primary @click="sendMsg('cut', 'transition', 'intro')">▶️ Intro</button>
       <button primary @click="sendMsg('cut', 'transition', 'stringer')">▶️ Stinger</button>
-      <!--<button primary @click="sendMsg('cut', 'timer', 'stringer')">12m Timer</button>-->
+
       <button :tertiary="activeGame == 'game1'" :tertiary-outline="activeGame != 'game1'" @click="activeGame = 'game1'">
         Spiel 1
       </button>
@@ -28,10 +28,11 @@
       <button :tertiary="activeGame == 'game7'" :tertiary-outline="activeGame != 'game7'" @click="activeGame = 'game7'">
         Spiel 7
       </button>
+
       <button secondary @click="sendMsg('cut', 'transition', 'winner_tony')">▶️ Tony gewinnt</button>
       <button secondary @click="sendMsg('cut', 'transition', 'winner_sarah')">▶️ Sarah gewinnt</button>
+
       <br />
-      <!-- UPDATED: Clear all now clears total, questions, and live timer -->
       <button secondary @click="clearAll()">CLEAR ALL</button>
     </div>
 
@@ -56,7 +57,9 @@
             :value="gamedata?.player1"
             @change="($event) => sendData(activeGame, $event, 'score', '1')"
           >
-            <option v-for="i in (gamedata?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">{{ i - 1 }}</option>
+            <option v-for="i in (gamedata?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">
+              {{ i - 1 }}
+            </option>
           </select>
         </div>
         <div class="flex flex-row items-center justify-between gap-2">
@@ -67,7 +70,9 @@
             :value="gamedata?.player2"
             @change="($event) => sendData(activeGame, $event, 'score', '2')"
           >
-            <option v-for="i in (gamedata?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">{{ i - 1 }}</option>
+            <option v-for="i in (gamedata?.max_points ?? 0) + 1" :key="i - 1" :value="i - 1">
+              {{ i - 1 }}
+            </option>
           </select>
         </div>
         <div class="flex flex-col gap-2">
@@ -84,67 +89,119 @@
             <button secondary @click="sendMsg('clear', 'score', activeGame)">🛑 Clear score</button>
           </div>
           <button primary @click="sendMsg('cut', 'transition', activeGame)">▶️ Trigger Game Intro</button>
+        </div>
 
-          <!-- Game 2 Questions Editor -->
-          <div v-if="activeGame === 'game2'" class="mt-6 border-t pt-4">
-            <p class="text-xl w-full text-center font-bold">Spiel 2 – Fragen</p>
+        <!-- Spiel 5 – Würfelspiel -->
+        <div v-if="activeGame === 'game5'" class="mt-6 border-t pt-4">
+          <p class="text-xl w-full text-center font-bold">Spiel 5 – Würfelspiel</p>
 
-            <div
-              v-for="(q, idx) in questions"
-              :key="idx"
-              class="mt-3 p-3 rounded-lg border bg-white/70 flex flex-col gap-2"
-            >
-              <div class="text-sm font-semibold text-gray-600">Frage {{ idx + 1 }}</div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
+            <!-- Player 1 Panel -->
+            <div class="p-4 rounded-xl border bg-white/80">
+              <h3 class="font-bold mb-2">{{ data?.players?.player1 }}</h3>
 
-              <!-- Question text -->
-              <input
-                type="text"
-                placeholder="Fragentext…"
-                :value="q.text"
-                @change="(e:any) => updateQuestionText(idx, e.target.value)"
-              />
-
-              <!-- Editable labels + percentages -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <!-- Player 1 -->
-                <div class="flex items-center gap-2">
-                  <input
-                    type="text"
-                    class="w-40"
-                    :placeholder="data?.players?.player1"
-                    :value="q.label1 ?? ''"
-                    @change="(e:any) => updateQuestionLabel(idx, 'label1', e.target.value)"
-                  />
-                  <span>%</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    :value="q.p1"
-                    class="w-20"
-                    @change="(e:any) => updateQuestionPercent(idx, Number(e.target.value))"
-                  />
-                </div>
-
-                <!-- Player 2 (auto % preview) -->
-                <div class="flex items-center gap-2">
-                  <input
-                    type="text"
-                    class="w-40"
-                    :placeholder="data?.players?.player2"
-                    :value="q.label2 ?? ''"
-                    @change="(e:any) => updateQuestionLabel(idx, 'label2', e.target.value)"
-                  />
-                  <span class="text-xs text-gray-500 ml-2"> {{ 100 - (q.p1 ?? 0) }} % </span>
-                </div>
+              <!-- ROW 1: input + Add (bigger field) -->
+              <div class="flex items-center gap-2 mb-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="6"
+                  v-model.number="p1Roll"
+                  class="w-28 text-lg"
+                  @keyup.enter="addRoll('1')"
+                />
+                <button primary @click="addRoll('1')">Add</button>
               </div>
 
-              <div class="flex gap-2">
-                <button primary @click="playQuestion(idx, false)">▶️ Play Frage</button>
-                <button primary @click="playQuestion(idx, true)">▶️ Play Ergebnis</button>
-                <button secondary @click="clearQuestion()">🛑 Clear Frage</button>
+              <!-- ROW 2: Save run + Clear current + Remove last -->
+              <div class="flex items-center gap-2 mb-2">
+                <button primary @click="saveRun('1')">Save run</button>
+                <button secondary @click="clearCurrent('1')">Clear current</button>
+                <button tertiary @click="removeLast('1')">Remove last</button>
+              </div>
+
+              <!-- Overwrite saved -->
+              <div class="flex items-center gap-2 mb-2">
+                <input type="number" v-model.number="p1Overwrite" class="w-28 text-lg" />
+                <button secondary @click="overwriteSaved('1')">Overwrite saved</button>
+              </div>
+
+              <!-- Current stack + sums -->
+              <div class="text-sm text-gray-600 mb-1">Current stack:</div>
+              <div class="flex flex-wrap gap-2 mb-2">
+                <span v-for="(v, i) in dice.p1.stack" :key="i" class="px-2 py-1 bg-gray-200 rounded">{{ v }}</span>
+                <span v-if="dice.p1.stack.length === 0" class="text-gray-400">—</span>
+              </div>
+              <div class="text-sm">
+                Unsaved sum: <b>{{ unsavedSum(dice.p1.stack) }}</b>
+              </div>
+              <div class="text-sm">
+                Saved total: <b>{{ dice.p1.saved }}</b>
+              </div>
+
+              <div class="flex gap-2 mt-3">
+                <button primary @click="sendMsg('cut', 'dice', 'game5', { player: '1' })">▶️ Play P1 overlay</button>
+                <button secondary @click="sendMsg('clear', 'dice', 'game5', { player: '1' })">
+                  🛑 Clear P1 overlay
+                </button>
               </div>
             </div>
+
+            <!-- Player 2 Panel -->
+            <div class="p-4 rounded-xl border bg-white/80">
+              <h3 class="font-bold mb-2">{{ data?.players?.player2 }}</h3>
+
+              <!-- ROW 1: input + Add (bigger field) -->
+              <div class="flex items-center gap-2 mb-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="6"
+                  v-model.number="p2Roll"
+                  class="w-28 text-lg"
+                  @keyup.enter="addRoll('2')"
+                />
+                <button primary @click="addRoll('2')">Add</button>
+              </div>
+
+              <!-- ROW 2: Save run + Clear current + Remove last -->
+              <div class="flex items-center gap-2 mb-2">
+                <button primary @click="saveRun('2')">Save run</button>
+                <button secondary @click="clearCurrent('2')">Clear current</button>
+                <button tertiary @click="removeLast('2')">Remove last</button>
+              </div>
+
+              <!-- Overwrite saved -->
+              <div class="flex items-center gap-2 mb-2">
+                <input type="number" v-model.number="p2Overwrite" class="w-28 text-lg" />
+                <button secondary @click="overwriteSaved('2')">Overwrite saved</button>
+              </div>
+
+              <!-- Current stack + sums -->
+              <div class="text-sm text-gray-600 mb-1">Current stack:</div>
+              <div class="flex flex-wrap gap-2 mb-2">
+                <span v-for="(v, i) in dice.p2.stack" :key="i" class="px-2 py-1 bg-gray-200 rounded">{{ v }}</span>
+                <span v-if="dice.p2.stack.length === 0" class="text-gray-400">—</span>
+              </div>
+              <div class="text-sm">
+                Unsaved sum: <b>{{ unsavedSum(dice.p2.stack) }}</b>
+              </div>
+              <div class="text-sm">
+                Saved total: <b>{{ dice.p2.saved }}</b>
+              </div>
+
+              <div class="flex gap-2 mt-3">
+                <button primary @click="sendMsg('cut', 'dice', 'game5', { player: '2' })">▶️ Play P2 overlay</button>
+                <button secondary @click="sendMsg('clear', 'dice', 'game5', { player: '2' })">
+                  🛑 Clear P2 overlay
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 mt-4">
+            <button primary @click="sendMsg('cut', 'dice_totals', 'game5')">▶️ Play Saved Totals</button>
+            <button secondary @click="sendMsg('clear', 'dice_totals', 'game5')">🛑 Clear Saved Totals</button>
           </div>
         </div>
       </div>
@@ -261,14 +318,20 @@ import { useManagerStore } from "../stores/manager";
 export default defineComponent({
   data() {
     return {
-      activeGame: "game2",
+      activeGame: "game5",
 
-      // === Timer-Settings ===
+      // Dice UI state
+      p1Roll: 1,
+      p2Roll: 1,
+      p1Overwrite: 0,
+      p2Overwrite: 0,
+
+      // Timer UI
       timerUp: false,
       timerMin: 1,
       timerSec: 0,
 
-      // === Preview-Timer-State ===
+      // Preview-Timer-State
       timerInitial: 0,
       timerCurrent: 0,
       timerRunning: false,
@@ -282,9 +345,13 @@ export default defineComponent({
     gamedata() {
       return this.data?.[this.activeGame] ?? {};
     },
-    questions() {
-      const q = this.data?.game2?.questions ?? [];
-      return Array.from({ length: 7 }, (_, i) => q[i] ?? { text: "", p1: 50, p2: 50, label1: "", label2: "" });
+    dice(): { p1: { saved: number; stack: number[] }; p2: { saved: number; stack: number[] } } {
+      if (!this.data?.game5) return { p1: { saved: 0, stack: [] }, p2: { saved: 0, stack: [] } } as any;
+      const g5 = this.data.game5;
+      if (!g5.dice) g5.dice = { p1: { saved: 0, stack: [] }, p2: { saved: 0, stack: [] } };
+      if (!g5.dice.p1) g5.dice.p1 = { saved: 0, stack: [] };
+      if (!g5.dice.p2) g5.dice.p2 = { saved: 0, stack: [] };
+      return g5.dice;
     },
   },
 
@@ -309,59 +376,94 @@ export default defineComponent({
 
   methods: {
     ...mapActions(useConnectionStore, ["connectClient"]),
-    ...mapActions(useManagerStore, ["init", "sendAction", "updateData"]),
+    ...mapActions(useManagerStore, ["init", "sendAction", "updateData", "sendDiceUpdate"]),
 
-    // NEW: clear all helper
+    // Clear all overlays (extended)
     clearAll() {
-      // clear big overlay elements
       this.sendMsg("clear", "total", "total");
-      // clear question overlay
       this.sendMsg("clear", "question", "game2");
-      // clear live timer
       this.sendMsg("clear", "livetimer", "livetimer");
+      this.sendMsg("clear", "dice", "game5", { player: "1" });
+      this.sendMsg("clear", "dice", "game5", { player: "2" });
+      this.sendMsg("clear", "dice_totals", "game5");
     },
 
-    // === Questions helpers ===
-    ensureQuestionsArray() {
-      if (!this.data || !this.data.game2) return;
-      if (!Array.isArray(this.data.game2.questions)) {
-        this.data.game2.questions = [];
+    // Dice helpers
+    unsavedSum(arr: number[]) {
+      return arr.reduce((a, b) => a + (Number(b) || 0), 0);
+    },
+    clampDie(val: number) {
+      if (!Number.isFinite(val)) return 1;
+      return Math.max(1, Math.min(6, Math.round(val)));
+    },
+
+    addRoll(player: "1" | "2") {
+      const key = player === "1" ? "p1" : "p2";
+      const raw = player === "1" ? Number(this.p1Roll) : Number(this.p2Roll);
+      const val = this.clampDie(raw);
+
+      if (val === 6) {
+        // 6 -> current unsaved points are lost
+        this.dice[key].stack = [];
+      } else {
+        this.dice[key].stack.push(val);
       }
-      while (this.data.game2.questions.length < 7) {
-        this.data.game2.questions.push({
-          text: "",
-          p1: 50,
-          p2: 50,
-          label1: this.data?.players?.player1 ?? "",
-          label2: this.data?.players?.player2 ?? "",
-        });
+
+      this.updateData("game5", this.data.game5);
+
+      // clear input for next entry
+      if (player === "1") this.p1Roll = undefined as any;
+      else this.p2Roll = undefined as any;
+
+      // NEW: only refresh overlay if already visible (handled in OverlayView)
+      this.sendDiceUpdate("game5", player);
+    },
+
+    saveRun(player: "1" | "2") {
+      const key = player === "1" ? "p1" : "p2";
+      const sum = this.unsavedSum(this.dice[key].stack);
+      const candidate = Number(this.dice[key].saved || 0) + sum;
+
+      // Must land exactly on 60
+      if (candidate > 60) {
+        return; // do not save
       }
-      if (this.data.game2.questions.length > 7) {
-        this.data.game2.questions.splice(7);
+
+      this.dice[key].saved = candidate;
+      this.dice[key].stack = [];
+
+      this.updateData("game5", this.data.game5);
+
+      // NEW: conditional live refresh
+      this.sendDiceUpdate("game5", player);
+    },
+
+    clearCurrent(player: "1" | "2") {
+      const key = player === "1" ? "p1" : "p2";
+      this.dice[key].stack = [];
+      this.updateData("game5", this.data.game5);
+      // NEW: conditional live refresh
+      this.sendDiceUpdate("game5", player);
+    },
+
+    removeLast(player: "1" | "2") {
+      const key = player === "1" ? "p1" : "p2";
+      if (this.dice[key].stack.length > 0) {
+        this.dice[key].stack.pop();
+        this.updateData("game5", this.data.game5);
+        // NEW: conditional live refresh
+        this.sendDiceUpdate("game5", player);
       }
     },
-    updateQuestionText(idx: number, text: string) {
-      this.ensureQuestionsArray();
-      this.data.game2.questions[idx].text = text;
-      this.updateData("game2", this.data.game2);
-    },
-    updateQuestionPercent(idx: number, p1: number) {
-      this.ensureQuestionsArray();
-      const val = Math.max(0, Math.min(100, Math.round(Number(p1) || 0)));
-      this.data.game2.questions[idx].p1 = val;
-      this.data.game2.questions[idx].p2 = 100 - val;
-      this.updateData("game2", this.data.game2);
-    },
-    updateQuestionLabel(idx: number, key: "label1" | "label2", value: string) {
-      this.ensureQuestionsArray();
-      this.data.game2.questions[idx][key] = value;
-      this.updateData("game2", this.data.game2);
-    },
-    playQuestion(idx: number, withResults: boolean) {
-      this.sendMsg("cut", "question", "game2", { index: idx, showResults: withResults });
-    },
-    clearQuestion() {
-      this.sendMsg("clear", "question", "game2");
+
+    overwriteSaved(player: "1" | "2") {
+      const key = player === "1" ? "p1" : "p2";
+      const raw = player === "1" ? Number(this.p1Overwrite) : Number(this.p2Overwrite);
+      const val = Math.max(0, Math.min(60, Number.isFinite(raw) ? Math.round(raw) : 0)); // keep sane bounds
+      this.dice[key].saved = val;
+      this.updateData("game5", this.data.game5);
+      // NEW: conditional live refresh
+      this.sendDiceUpdate("game5", player);
     },
 
     // Backend-Interaktionen
@@ -370,14 +472,26 @@ export default defineComponent({
     },
     sendMsg(
       action: "clear" | "cut",
-      type: "all" | "name" | "score" | "info" | "total" | "transition" | "game" | "timer" | "livetimer" | "question",
+      type:
+        | "all"
+        | "name"
+        | "score"
+        | "info"
+        | "total"
+        | "transition"
+        | "game"
+        | "timer"
+        | "livetimer"
+        | "question"
+        | "dice"
+        | "dice_totals",
       scene: string,
       extra: Record<string, any> = {}
     ) {
       this.sendAction(action, { type, scene, ...extra });
     },
 
-    // === Timer existing methods ===
+    // === Preview-Timer-Logik ===
     onToggleDirection() {
       this.sendAction("timer", {
         command: "setDirection",
@@ -402,12 +516,14 @@ export default defineComponent({
       this.sendAction("timer", { command: "stop" });
     },
 
-    // === Preview-Timer-Logik ===
     timerTrigger(data: any) {
+      // 1) setDirection
       if (data.command === "setDirection") {
         this.timerUp = !!data.up;
         return;
       }
+
+      // 2) Start
       if (data.command === "start") {
         this.timerUp = !!data.up;
         this.timerInitial = (data.min || 0) * 60 + (data.sec || 0);
@@ -415,19 +531,27 @@ export default defineComponent({
         this.timerRunning = true;
         this.timerPaused = false;
       }
+
+      // 3) Pause
       if (data.command === "pause") {
         this.timerPaused = true;
         this.timerRunning = false;
       }
+
+      // 4) Resume
       if (data.command === "resume") {
         this.timerPaused = false;
         this.timerRunning = true;
       }
+
+      // 5) Stop
       if (data.command === "stop") {
         this.timerPaused = false;
         this.timerRunning = false;
         this.timerCurrent = this.timerUp ? 0 : this.timerInitial;
       }
+
+      // 6) Intervall verwalten
       if (this.timerInterval !== undefined) {
         clearInterval(this.timerInterval);
         this.timerInterval = undefined;
@@ -436,11 +560,14 @@ export default defineComponent({
         this.timerInterval = window.setInterval(this.updateTimerPreview, 1000);
       }
     },
+
     updateTimerPreview() {
       if (!this.timerRunning || this.timerPaused) return;
+
       if (this.timerUp) {
         this.timerCurrent++;
         if (this.timerCurrent >= this.timerInitial) {
+          // Ende erreicht
           this.timerRunning = false;
           if (this.timerInterval !== undefined) {
             clearInterval(this.timerInterval);
@@ -451,6 +578,7 @@ export default defineComponent({
         if (this.timerCurrent > 0) {
           this.timerCurrent--;
           if (this.timerCurrent === 0) {
+            // Ende erreicht
             this.timerRunning = false;
             if (this.timerInterval !== undefined) {
               clearInterval(this.timerInterval);

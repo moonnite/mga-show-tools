@@ -77,8 +77,18 @@
     "title": "WÜRFELSPIEL",
     "player1": "0",
     "player2": "0",
-    "max_points": 2,
-    "video": "/Spiel_5_Stinger_MGA_2024-vp9-chrome.webm"
+    "max_points": 1,
+    "video": "/Spiel_5_Stinger_MGA_2024-vp9-chrome.webm",
+    "dice": {
+      "p1": {
+        "saved": 0,
+        "stack": []
+      },
+      "p2": {
+        "saved": 0,
+        "stack": []
+      }
+    }
   },
   "game6": {
     "title": "ROADRUNNER ZIEHEN",

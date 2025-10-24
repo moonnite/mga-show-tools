@@ -22,6 +22,12 @@ export const useManagerStore = defineStore("manager", {
       if (!connectionStore.connection) return;
       connectionStore.connection.emit(action, data);
     },
+    // NEW: ask backend to broadcast a conditional dice update
+    sendDiceUpdate(scene: string, player: "1" | "2") {
+      const connectionStore = useConnectionStore();
+      if (!connectionStore.connection) return;
+      connectionStore.connection.emit("diceUpdate", { scene, player });
+    },
     getData() {
       const connectionStore = useConnectionStore();
       if (!connectionStore.connection) return;

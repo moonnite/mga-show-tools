@@ -13,9 +13,15 @@ function get_data(): Promise<any> {
       if (err) {
         console.error("Error reading the JSON file:", err);
         reject();
+        return;
       }
-      const jsonData = JSON.parse(data);
-      resolve(jsonData);
+      try {
+        const jsonData = JSON.parse(data);
+        resolve(jsonData);
+      } catch (e) {
+        console.error("Error parsing the JSON file:", e);
+        reject();
+      }
     });
   });
 }
@@ -26,13 +32,26 @@ function set_data(data: any): Promise<void> {
       if (err) {
         console.error(err);
         reject();
+        return;
       }
       resolve();
     });
   });
 }
 
-type CutType = "all" | "name" | "score" | "info" | "total" | "transition" | "game" | "timer" | "livetimer" | "question";
+type CutType =
+  | "all"
+  | "name"
+  | "score"
+  | "info"
+  | "total"
+  | "transition"
+  | "game"
+  | "timer"
+  | "livetimer"
+  | "question"
+  | "dice"
+  | "dice_totals";
 
 const app = express();
 const server = http.createServer(app);
@@ -47,7 +66,7 @@ const io = new Server(server, {
 // === Overlay/Manager WebSocket Events ===
 io.on("connection", (socket) => {
   socket.on("getState", async () => {
-    let save = await get_data();
+    const save = await get_data();
     socket.emit("state", save);
   });
 
@@ -55,32 +74,44 @@ io.on("connection", (socket) => {
     await set_data(data);
   });
 
-  socket.on("clear", async (data: { type: CutType; scene: string }) => {
+  socket.on("clear", async (data: { type: CutType; scene: string; [k: string]: any }) => {
     console.log("CLEAR EVENT!", data);
     socket.broadcast.emit("clear", data);
   });
 
-  socket.on("cut", async (data: { type: CutType; scene: string; [key: string]: any }) => {
+  socket.on("cut", async (data: { type: CutType; scene: string; [k: string]: any }) => {
     console.log("CUT EVENT!", data);
     const save = await get_data();
 
-    // keep original total players behavior
-    save.total["players"] = save.players;
+    // Take the scene payload and ALWAYS attach players so overlays have names available
+    const sceneKey = data.scene;
+    const rawSceneData = save?.[sceneKey] ?? {};
+    const payloadData = {
+      ...rawSceneData,
+      players: save?.players, // <--- inject player names for all scenes (dice, dice_totals, question, etc.)
+    };
 
-    const payload: any = save[data.scene];
-
-    // For question overlays we also need the player names on the payload.
-    if (data.type === "question" && payload) {
-      payload.players = save.players;
-    }
-
-    // Broadcast with any extra fields (e.g., index, showResults)
-    const { type, scene, ...extra } = data;
-    socket.broadcast.emit("cut", { data: payload, type, ...extra });
+    // Emit with the merged extras (e.g., { player: '1' } for dice)
+    socket.broadcast.emit("cut", { ...data, data: payloadData });
   });
 
   socket.on("timer", (data: any) => {
     io.emit("timer", data);
+  });
+
+  // === Conditional dice overlay update (only refresh overlays if already visible) ===
+  // Manager emits { scene: 'game5', player: '1' | '2' }
+  socket.on("diceUpdate", async (data: { scene: string; player: "1" | "2" }) => {
+    try {
+      const save = await get_data();
+      // Also inject players here so names update correctly during live edits
+      io.emit("dice_update", {
+        data: { ...(save?.[data.scene] ?? {}), players: save?.players },
+        player: data.player,
+      });
+    } catch (e) {
+      console.warn("diceUpdate failed to read state:", e);
+    }
   });
 });
 
