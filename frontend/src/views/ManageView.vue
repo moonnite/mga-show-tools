@@ -91,6 +91,65 @@
           <button primary @click="sendMsg('cut', 'transition', activeGame)">▶️ Trigger Game Intro</button>
         </div>
 
+        <!-- Spiel 2 – Fragen / Voting -->
+        <div v-if="activeGame === 'game2'" class="mt-6 border-t pt-4">
+          <p class="text-xl w-full text-center font-bold">Spiel 2 – Fragen &amp; Voting</p>
+
+          <div class="flex flex-col gap-4 mt-2">
+            <div v-for="(q, idx) in questions" :key="idx" class="border rounded-lg p-3 flex flex-col gap-2 bg-white/70">
+              <div class="flex items-center justify-between">
+                <div class="font-bold">Frage {{ idx + 1 }}</div>
+                <div class="flex gap-2">
+                  <button primary @click="playQuestion(idx, false)">▶️ Play Frage</button>
+                  <button primary @click="playQuestion(idx, true)">▶️ Play Ergebnis</button>
+                  <button secondary @click="clearQuestion()">🛑 Clear</button>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-sm">Fragetext</label>
+                <input type="text" :value="q.text" @change="(e) => updateQuestionText(idx, e)" />
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label class="text-sm">Label links</label>
+                  <input
+                    type="text"
+                    :placeholder="data?.players?.player1 || 'Spieler 1'"
+                    :value="q.label1 || ''"
+                    @change="(e) => updateQuestionLabel(idx, 'label1', e)"
+                  />
+                </div>
+                <div>
+                  <label class="text-sm">Label rechts</label>
+                  <input
+                    type="text"
+                    :placeholder="data?.players?.player2 || 'Spieler 2'"
+                    :value="q.label2 || ''"
+                    @change="(e) => updateQuestionLabel(idx, 'label2', e)"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-sm">Prozent (links)</label>
+                  <div class="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      :value="q.p1 ?? 0"
+                      @change="(e) => updateQuestionP1(idx, e)"
+                      class="w-20"
+                    />
+                    <span class="text-sm text-gray-600">rechts: {{ 100 - Number(q.p1 ?? 0) }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Spiel 5 – Würfelspiel -->
         <div v-if="activeGame === 'game5'" class="mt-6 border-t pt-4">
           <p class="text-xl w-full text-center font-bold">Spiel 5 – Würfelspiel</p>
@@ -315,6 +374,8 @@ import { useManagerStore } from "../stores/manager";
 </script>
 
 <script lang="ts">
+type G2Question = { text: string; p1: number; p2: number; label1?: string; label2?: string };
+
 export default defineComponent({
   data() {
     return {
@@ -345,6 +406,26 @@ export default defineComponent({
     gamedata() {
       return this.data?.[this.activeGame] ?? {};
     },
+
+    // Ensure game2.questions exists & has 7 entries (non-destructive)
+    questions(): G2Question[] {
+      const base: G2Question = { text: "", p1: 50, p2: 50, label1: "", label2: "" };
+      const g2 = (this.data?.game2 ?? {}) as any;
+      const arr = Array.isArray(g2.questions) ? g2.questions.slice() : [];
+      for (let i = 0; i < 7; i++) {
+        if (!arr[i]) arr[i] = { ...base };
+        // normalize numbers
+        const p1 = Number.isFinite(Number(arr[i].p1)) ? Number(arr[i].p1) : 0;
+        arr[i].p1 = Math.min(100, Math.max(0, p1));
+        arr[i].p2 = 100 - arr[i].p1;
+        arr[i].text = arr[i].text ?? "";
+        arr[i].label1 = arr[i].label1 ?? "";
+        arr[i].label2 = arr[i].label2 ?? "";
+      }
+      return arr;
+    },
+
+    // Dice state helpers
     dice(): { p1: { saved: number; stack: number[] }; p2: { saved: number; stack: number[] } } {
       if (!this.data?.game5) return { p1: { saved: 0, stack: [] }, p2: { saved: 0, stack: [] } } as any;
       const g5 = this.data.game5;
@@ -362,9 +443,22 @@ export default defineComponent({
     const connectionStore = useConnectionStore();
     if (!connectionStore.connection) return;
 
+    // Ensure Game 2 questions are present once we have data
+    setTimeout(() => this.ensureGame2Questions(), 0);
+
     connectionStore.connection.on("timer", (data: any) => {
       this.timerTrigger(data);
     });
+  },
+
+  watch: {
+    data: {
+      handler() {
+        // Re-ensure after data refresh
+        this.ensureGame2Questions();
+      },
+      deep: true,
+    },
   },
 
   beforeUnmount() {
@@ -378,17 +472,49 @@ export default defineComponent({
     ...mapActions(useConnectionStore, ["connectClient"]),
     ...mapActions(useManagerStore, ["init", "sendAction", "updateData", "sendDiceUpdate"]),
 
-    // Clear all overlays (extended)
-    clearAll() {
-      this.sendMsg("clear", "total", "total");
-      this.sendMsg("clear", "question", "game2");
-      this.sendMsg("clear", "livetimer", "livetimer");
-      this.sendMsg("clear", "dice", "game5", { player: "1" });
-      this.sendMsg("clear", "dice", "game5", { player: "2" });
-      this.sendMsg("clear", "dice_totals", "game5");
+    // ===== GAME 2: QUESTIONS =====
+    ensureGame2Questions() {
+      if (!this.data) return;
+      if (!this.data.game2) this.data.game2 = {};
+      if (!Array.isArray(this.data.game2.questions) || this.data.game2.questions.length < 7) {
+        const base: G2Question = { text: "", p1: 50, p2: 50, label1: "", label2: "" };
+        const existing: G2Question[] = Array.isArray(this.data.game2.questions) ? this.data.game2.questions : [];
+        const next: G2Question[] = [];
+        for (let i = 0; i < 7; i++) next[i] = existing[i] ? { ...base, ...existing[i] } : { ...base };
+        // normalize p2
+        for (let i = 0; i < 7; i++) next[i].p2 = 100 - (Number(next[i].p1) || 0);
+        this.data.game2.questions = next;
+        this.updateData("game2", this.data.game2);
+      }
     },
 
-    // Dice helpers
+    updateQuestionText(idx: number, e: any) {
+      const val = e?.target?.value ?? "";
+      this.data.game2.questions[idx].text = val;
+      this.updateData("game2", this.data.game2);
+    },
+    updateQuestionLabel(idx: number, which: "label1" | "label2", e: any) {
+      const val = e?.target?.value ?? "";
+      this.data.game2.questions[idx][which] = val;
+      this.updateData("game2", this.data.game2);
+    },
+    updateQuestionP1(idx: number, e: any) {
+      let p1 = Number(e?.target?.value ?? 0);
+      if (!Number.isFinite(p1)) p1 = 0;
+      p1 = Math.max(0, Math.min(100, Math.round(p1)));
+      const p2 = 100 - p1;
+      this.data.game2.questions[idx].p1 = p1;
+      this.data.game2.questions[idx].p2 = p2;
+      this.updateData("game2", this.data.game2);
+    },
+    playQuestion(idx: number, withResults: boolean) {
+      this.sendMsg("cut", "question", "game2", { index: idx, showResults: withResults });
+    },
+    clearQuestion() {
+      this.sendMsg("clear", "question", "game2");
+    },
+
+    // ===== DICE (game5) =====
     unsavedSum(arr: number[]) {
       return arr.reduce((a, b) => a + (Number(b) || 0), 0);
     },
@@ -415,7 +541,7 @@ export default defineComponent({
       if (player === "1") this.p1Roll = undefined as any;
       else this.p2Roll = undefined as any;
 
-      // NEW: only refresh overlay if already visible (handled in OverlayView)
+      // conditional live refresh
       this.sendDiceUpdate("game5", player);
     },
 
@@ -433,8 +559,6 @@ export default defineComponent({
       this.dice[key].stack = [];
 
       this.updateData("game5", this.data.game5);
-
-      // NEW: conditional live refresh
       this.sendDiceUpdate("game5", player);
     },
 
@@ -442,7 +566,6 @@ export default defineComponent({
       const key = player === "1" ? "p1" : "p2";
       this.dice[key].stack = [];
       this.updateData("game5", this.data.game5);
-      // NEW: conditional live refresh
       this.sendDiceUpdate("game5", player);
     },
 
@@ -451,7 +574,6 @@ export default defineComponent({
       if (this.dice[key].stack.length > 0) {
         this.dice[key].stack.pop();
         this.updateData("game5", this.data.game5);
-        // NEW: conditional live refresh
         this.sendDiceUpdate("game5", player);
       }
     },
@@ -459,14 +581,13 @@ export default defineComponent({
     overwriteSaved(player: "1" | "2") {
       const key = player === "1" ? "p1" : "p2";
       const raw = player === "1" ? Number(this.p1Overwrite) : Number(this.p2Overwrite);
-      const val = Math.max(0, Math.min(60, Number.isFinite(raw) ? Math.round(raw) : 0)); // keep sane bounds
+      const val = Math.max(0, Math.min(60, Number.isFinite(raw) ? Math.round(raw) : 0));
       this.dice[key].saved = val;
       this.updateData("game5", this.data.game5);
-      // NEW: conditional live refresh
       this.sendDiceUpdate("game5", player);
     },
 
-    // Backend-Interaktionen
+    // ===== Backend-Interaktionen =====
     sendData(scene: string, data: any, type?: "score" | "title", player?: "1" | "2") {
       this.updateData(scene, data.target ? data.target.value : data, type, player);
     },
@@ -491,7 +612,7 @@ export default defineComponent({
       this.sendAction(action, { type, scene, ...extra });
     },
 
-    // === Preview-Timer-Logik ===
+    // ===== Timer (preview) =====
     onToggleDirection() {
       this.sendAction("timer", {
         command: "setDirection",
@@ -587,6 +708,16 @@ export default defineComponent({
           }
         }
       }
+    },
+
+    // CLEAR ALL convenience
+    clearAll() {
+      this.sendMsg("clear", "total", "total");
+      this.sendMsg("clear", "question", "game2");
+      this.sendMsg("clear", "livetimer", "livetimer");
+      this.sendMsg("clear", "dice", "game5", { player: "1" });
+      this.sendMsg("clear", "dice", "game5", { player: "2" });
+      this.sendMsg("clear", "dice_totals", "game5");
     },
   },
 });

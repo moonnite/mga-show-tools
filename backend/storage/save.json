@@ -18,43 +18,53 @@
     "video": "/Spiel_2_Stinger_MGA_2024-vp9-chrome.webm",
     "questions": [
       {
-        "text": "Das ist eine sehr sehr sehr lange Frage und noch viel viel Länger als geplant!",
-        "p1": 90,
-        "p2": 10,
+        "text": "Frage 1",
+        "p1": 50,
+        "p2": 50,
         "label1": "Ja",
         "label2": "Nein"
       },
       {
-        "text": "Das ist eine sehr sehr sehr lange Frage 2!",
+        "text": "Frage 2",
         "p1": 50,
         "p2": 50,
-        "label1": "Käse",
-        "label2": "Kuchen"
+        "label1": "Ja",
+        "label2": "Nein"
       },
       {
-        "text": "",
+        "text": "Frage 3",
         "p1": 50,
-        "p2": 50
+        "p2": 50,
+        "label1": "Ja",
+        "label2": "Nein"
       },
       {
-        "text": "",
+        "text": "Frage 4",
         "p1": 50,
-        "p2": 50
+        "p2": 50,
+        "label1": "Ja",
+        "label2": "Nein"
       },
       {
-        "text": "",
+        "text": "Frage 5",
         "p1": 50,
-        "p2": 50
+        "p2": 50,
+        "label1": "Ja",
+        "label2": "Nein"
       },
       {
-        "text": "",
+        "text": "Frage 6",
         "p1": 50,
-        "p2": 50
+        "p2": 50,
+        "label1": "Ja",
+        "label2": "Nein"
       },
       {
-        "text": "",
+        "text": "Frage 7",
         "p1": 50,
-        "p2": 50
+        "p2": 50,
+        "label1": "Ja",
+        "label2": "Nein"
       }
     ]
   },
@@ -81,11 +91,11 @@
     "video": "/Spiel_5_Stinger_MGA_2024-vp9-chrome.webm",
     "dice": {
       "p1": {
-        "saved": 60,
+        "saved": 0,
         "stack": []
       },
       "p2": {
-        "saved": 33,
+        "saved": 0,
         "stack": []
       }
     }
