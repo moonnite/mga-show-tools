@@ -74,7 +74,7 @@
     "player2": "0",
     "max_points": 1,
     "video": "/Spiel_3_Stinger_MGA_2024-vp9-chrome.webm",
-    "game": "/MGA_2024_Spiel_REWE_Prerender_Test.mp4"
+    "game": "/MGA_2025_Spiel_3_Eisparkour.mp4"
   },
   "game4": {
     "title": "SUMO SPIKEBALL",
@@ -106,7 +106,7 @@
     "player2": "0",
     "max_points": 1,
     "video": "/Spiel_6_Stinger_MGA_2024-vp9-chrome.webm",
-    "game": "/MGA_2024_Spiel_Biathlon_Prerender_Test.mp4"
+    "game": "/MGA_2025_Spiel_6_Roadrunner.mp4"
   },
   "game7": {
     "title": "VR BANKIER",
@@ -115,20 +115,32 @@
     "max_points": 1,
     "video": "/Spiel_7_Stinger_MGA_2024-vp9-chrome.webm"
   },
+
   "stringer": {
-    "video": "/Stinger_Trans_MGA_2024_Sound-vp9-chrome.webm"
+    "video": "/MGA_Stinger_Trans_Up_SFX_2025-vp9-chrome.webm"
   },
+  "stringer2": {
+    "video": "/MGA_Stinger_Trans_SFX_2025-vp9-chrome.webm"
+  },
+
+  "vorstellung_leo": {
+    "video": "/MGA_2025_Leo_Vorstellung_MAZ.mp4"
+  },
+  "vorstellung_paul": {
+    "video": "/MGA_2024_Paul_Vorstellung_MAZ.mp4"
+  },
+
   "timer": {
     "video": "/12Min_Countdown_MGA_2024.webm"
   },
   "intro": {
-    "video": "/Show_Intro_MGA_2024_Sound-vp9-chrome.webm"
+    "video": "/MGA_2025_Showintro-vp9-chrome.webm"
   },
   "winner_tony": {
-    "video": "/Sieger_Tony_MGA_2024_Sound-vp9-chrome.webm"
+    "video": "/MGA_2025_Sieger_Leo-vp9-chrome.webm"
   },
   "winner_sarah": {
-    "video": "/Sieger_Sarah_MGA_2024_Sound-vp9-chrome.webm"
+    "video": "/MGA_2025_Sieger_Paul-vp9-chrome.webm"
   },
   "total": {
     "player1": "0",

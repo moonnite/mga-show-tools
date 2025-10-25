@@ -5,7 +5,15 @@
   <div class="flex flex-row divide-x divide-gray-400 h-full w-full overflow-hidden">
     <div class="flex flex-col gap-4 h-full w-32 md:w-64 p-2">
       <button primary @click="sendMsg('cut', 'transition', 'intro')">▶️ Intro</button>
+
+      <!-- Stinger 1 (existing) -->
       <button primary @click="sendMsg('cut', 'transition', 'stringer')">▶️ Stinger</button>
+      <!-- Stinger 2 (new) -->
+      <button primary @click="sendMsg('cut', 'transition', 'stringer2')">▶️ Stinger 2</button>
+
+      <!-- Vorstellungen (new) -->
+      <button primary @click="sendMsg('cut', 'transition', 'vorstellung_leo')">▶️ Vorstellung Leo</button>
+      <button primary @click="sendMsg('cut', 'transition', 'vorstellung_paul')">▶️ Vorstellung Paul</button>
 
       <button :tertiary="activeGame == 'game1'" :tertiary-outline="activeGame != 'game1'" @click="activeGame = 'game1'">
         Spiel 1
@@ -29,8 +37,9 @@
         Spiel 7
       </button>
 
-      <button secondary @click="sendMsg('cut', 'transition', 'winner_tony')">▶️ Tony gewinnt</button>
-      <button secondary @click="sendMsg('cut', 'transition', 'winner_sarah')">▶️ Sarah gewinnt</button>
+      <!-- Rename winner buttons to Leo/Paul (labels only) -->
+      <button secondary @click="sendMsg('cut', 'transition', 'winner_tony')">▶️ Leo gewinnt</button>
+      <button secondary @click="sendMsg('cut', 'transition', 'winner_sarah')">▶️ Paul gewinnt</button>
 
       <br />
       <button secondary @click="clearAll()">CLEAR ALL</button>
@@ -443,8 +452,9 @@ export default defineComponent({
     const connectionStore = useConnectionStore();
     if (!connectionStore.connection) return;
 
-    // Ensure Game 2 questions are present once we have data
-    setTimeout(() => this.ensureGame2Questions(), 0);
+    // IMPORTANT: Do NOT auto-write questions before state arrives.
+    // We rely on the watcher (below) to run ensureGame2Questions()
+    // after the first real state payload is received.
 
     connectionStore.connection.on("timer", (data: any) => {
       this.timerTrigger(data);
@@ -454,7 +464,7 @@ export default defineComponent({
   watch: {
     data: {
       handler() {
-        // Re-ensure after data refresh
+        // Re-ensure after data refresh – now guarded so it only runs once state is truly loaded.
         this.ensureGame2Questions();
       },
       deep: true,
@@ -474,7 +484,10 @@ export default defineComponent({
 
     // ===== GAME 2: QUESTIONS =====
     ensureGame2Questions() {
-      if (!this.data) return;
+      // Guard until initial state has arrived to avoid overwriting save.json
+      const hasLoaded = !!this.data && !!this.data.players && !!this.data.total;
+      if (!hasLoaded) return;
+
       if (!this.data.game2) this.data.game2 = {};
       if (!Array.isArray(this.data.game2.questions) || this.data.game2.questions.length < 7) {
         const base: G2Question = { text: "", p1: 50, p2: 50, label1: "", label2: "" };
